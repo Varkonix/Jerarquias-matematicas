@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Entrenador interactivo para dominar la jerarquía de operaciones matemáticas (PAPOMUDAS / PEMDAS) con pizarra táctil y explicaciones paso a paso.">
+  <title>Jerarquía de Operaciones - PAPOMUDAS / PEMDAS</title>
+
+  <!-- PWA Manifest & Favicon -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
+  <link rel="apple-touch-icon" href="./icons/favicon.svg">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="w-full bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-4xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-2">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/20 flex items-center justify-center">
+          <img src="./icons/favicon.svg" alt="Logo" class="w-full h-full rounded-[10px]">
+        </div>
+        <div>
+          <h1 class="text-base sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5" data-i18n="appTitle">
+            Jerarquía de Operaciones
+          </h1>
+          <p class="text-xs text-indigo-400 font-medium hidden sm:block" data-i18n="appSubtitle">
+            Entrenador interactivo PAPOMUDAS
+          </p>
+        </div>
+      </div>
+
+      <!-- Actions / Badges -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5">
+        <!-- PAPOMUDAS / PEMDAS Rule Info Button -->
+        <button type="button" data-action="open-guide"
+          class="tap-effect flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/60 text-indigo-300 text-xs font-semibold shadow-sm"
+          title="Ver Regla PAPOMUDAS / PEMDAS">
+          <span>📚</span>
+          <span class="hidden xs:inline" data-i18n="ruleBadge">Regla PAPOMUDAS</span>
+        </button>
+
+        <!-- Settings Button -->
+        <button type="button" id="btn-open-settings"
+          class="tap-effect p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 shadow-sm"
+          data-i18n-title="settingsTitle" title="Ajustes">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTAINER ==================== -->
+  <main class="flex-1 w-full max-w-4xl mx-auto px-3 sm:px-6 py-4 flex flex-col gap-4">
+
+    <!-- 1. STATS SECTION (Estadísticas Persistentes) -->
+    <section aria-label="Estadísticas" class="grid grid-cols-4 gap-2 sm:gap-3">
+      <!-- Correct Answers -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
+        <span class="block text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="statCorrect">Aciertos</span>
+        <span id="stat-correct-count" class="text-lg sm:text-2xl font-black text-emerald-400 font-math">0</span>
+      </div>
+
+      <!-- Current Streak -->
+      <div id="stat-streak-card" class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 sm:p-3 text-center shadow-sm transition-all duration-300">
+        <div class="flex items-center justify-center gap-1">
+          <span class="block text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="statStreak">Racha</span>
+          <span class="text-xs flame-active">🔥</span>
+        </div>
+        <span id="stat-streak-count" class="text-lg sm:text-2xl font-black text-amber-400 font-math">0</span>
+      </div>
+
+      <!-- Best Streak -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
+        <span class="block text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="statBestStreak">Mejor</span>
+        <span id="stat-best-streak-count" class="text-lg sm:text-2xl font-black text-indigo-400 font-math">0</span>
+      </div>
+
+      <!-- Mistakes -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 sm:p-3 text-center shadow-sm">
+        <span class="block text-[11px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider" data-i18n="statErrors">Errores</span>
+        <span id="stat-errors-count" class="text-lg sm:text-2xl font-black text-rose-400 font-math">0</span>
+      </div>
+    </section>
+
+    <!-- 2. DIFFICULTY SELECTOR -->
+    <section aria-label="Nivel de Dificultad" class="flex flex-col gap-1.5">
+      <div class="flex items-center justify-between px-1">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="levelSelectLabel">Nivel de dificultad</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 bg-slate-900/60 p-1 rounded-xl border border-slate-800/80">
+        <button type="button" data-level="easy" class="tap-effect py-2 px-1 text-center rounded-lg text-xs sm:text-sm font-bold transition-all duration-200">
+          <span data-i18n="levelEasy">Fácil</span>
+        </button>
+        <button type="button" data-level="medium" class="tap-effect py-2 px-1 text-center rounded-lg text-xs sm:text-sm font-bold transition-all duration-200">
+          <span data-i18n="levelMedium">Medio</span>
+        </button>
+        <button type="button" data-level="hard" class="tap-effect py-2 px-1 text-center rounded-lg text-xs sm:text-sm font-bold transition-all duration-200">
+          <span data-i18n="levelHard">Avanzado</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 3. MAIN EXERCISE CARD -->
+    <section id="exercise-card" class="bg-gradient-to-b from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
+      
+      <!-- Card Header -->
+      <div class="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+        <span class="text-xs sm:text-sm font-semibold text-slate-400" data-i18n="exerciseTitle">
+          Resuelve respetando la jerarquía:
+        </span>
+        <!-- Touch Whiteboard Button in Header -->
+        <button type="button" data-action="open-whiteboard"
+          class="tap-effect flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/30">
+          <span>✏️</span>
+          <span data-i18n="btnWhiteboard">Pizarra Táctil</span>
+        </button>
+      </div>
+
+      <!-- Mathematical Expression Display -->
+      <div class="relative py-6 sm:py-9 px-4 bg-slate-950/70 border border-slate-800 rounded-2xl flex items-center justify-center text-center overflow-x-auto shadow-inner">
+        <div id="main-expression" class="font-math font-extrabold text-3xl sm:text-5xl md:text-6xl text-white tracking-wide select-all">
+          ...
+        </div>
+      </div>
+
+      <!-- Feedback Banner (Mensajes de Acierto / Error) -->
+      <div id="feedback-banner" class="hidden p-3 rounded-xl border text-center text-xs sm:text-sm font-bold transition-all"></div>
+
+      <!-- Input & Mode Controls -->
+      <div class="flex flex-col gap-3">
+        
+        <!-- Toggle Input Mode -->
+        <div class="flex items-center justify-between text-xs px-1 text-slate-400">
+          <span class="font-semibold" data-i18n="inputModeLabel">Modo de Entrada:</span>
+          <div class="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+            <button type="button" id="mode-touch-btn" class="tap-effect px-2.5 py-1 rounded-md text-xs font-bold transition-all" data-i18n="modeTouch">
+              Teclado Táctil
+            </button>
+            <button type="button" id="mode-native-btn" class="tap-effect px-2.5 py-1 rounded-md text-xs font-bold transition-all" data-i18n="modeNative">
+              Teclado Móvil
+            </button>
+          </div>
+        </div>
+
+        <!-- Answer Field Container -->
+        <div class="relative flex items-center">
+          <input type="number" id="answer-input" inputmode="numeric" pattern="[0-9\-]*"
+            class="w-full bg-slate-950 border-2 border-slate-700 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 rounded-xl py-3 px-4 text-center font-math font-black text-2xl sm:text-3xl text-white tracking-widest outline-none transition-all"
+            data-i18n-placeholder="inputPlaceholder" placeholder="Escribe tu resultado...">
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button type="button" id="btn-show-steps"
+            class="tap-effect py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm">
+            <span>💡</span>
+            <span data-i18n="btnShowSteps">Ver Paso a Paso</span>
+          </button>
+
+          <button type="button" id="btn-check-answer"
+            class="tap-effect py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5">
+            <span>✅</span>
+            <span data-i18n="btnCheck">Comprobar Respuesta</span>
+          </button>
+
+          <button type="button" id="btn-next-exercise"
+            class="hidden col-span-2 tap-effect py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm sm:text-base shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5">
+            <span>➡️</span>
+            <span data-i18n="btnNext">Siguiente Ejercicio</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 4. VIRTUAL KEYPAD (Teclado Táctil en pantalla) -->
+      <div id="virtual-keypad" class="pt-2 border-t border-slate-800/80">
+        <div class="max-w-xs mx-auto grid grid-cols-3 gap-2">
+          <!-- Row 1 -->
+          <button type="button" data-key="7" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">7</button>
+          <button type="button" data-key="8" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">8</button>
+          <button type="button" data-key="9" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">9</button>
+          <!-- Row 2 -->
+          <button type="button" data-key="4" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">4</button>
+          <button type="button" data-key="5" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">5</button>
+          <button type="button" data-key="6" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">6</button>
+          <!-- Row 3 -->
+          <button type="button" data-key="1" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">1</button>
+          <button type="button" data-key="2" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">2</button>
+          <button type="button" data-key="3" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">3</button>
+          <!-- Row 4 -->
+          <button type="button" data-key="minus" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm text-slate-300">-</button>
+          <button type="button" data-key="0" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm">0</button>
+          <button type="button" data-key="backspace" class="tap-effect h-12 bg-slate-800 hover:bg-slate-700 active:bg-indigo-600 rounded-xl text-lg font-bold font-math shadow-sm text-amber-400" data-i18n="keypadDelete">⌫</button>
+          <!-- Row 5: Clear and Submit -->
+          <button type="button" data-key="clear" class="tap-effect h-11 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 rounded-xl text-sm font-black font-math text-rose-300" data-i18n="keypadClear">C</button>
+          <button type="button" data-key="submit" class="col-span-2 tap-effect h-11 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-black text-white shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5" data-i18n="btnCheck">
+            <span>OK</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="w-full py-3 px-4 border-t border-slate-900 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-center gap-2">
+    <span>PAPOMUDAS / PEMDAS Trainer • Nexusbyte</span>
+    <span id="offline-badge" class="hidden inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded-full border border-emerald-800/60">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span data-i18n="offlineReady">Offline Ready</span>
+    </span>
+  </footer>
+
+  <!-- ======================================================= -->
+  <!-- MODAL: PIZARRA TÁCTIL (Canvas Scratchpad)              -->
+  <!-- ======================================================= -->
+  <div id="whiteboard-modal" class="hidden fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md">
+    
+    <!-- Modal Header -->
+    <div class="px-3 py-2.5 bg-slate-900 border-b border-slate-800 flex flex-col gap-2">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">✏️</span>
+          <h2 class="text-sm sm:text-base font-bold text-white" data-i18n="wbTitle">Pizarra de Borrador</h2>
+        </div>
+        <button type="button" data-action="close-whiteboard"
+          class="tap-effect px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 flex items-center gap-1"
+          data-i18n="wbClose">
+          <span>✕</span>
+          <span class="hidden sm:inline">Cerrar</span>
+        </button>
+      </div>
+
+      <!-- Banner con la Expresión Activa (Requisito Clave) -->
+      <div class="w-full bg-gradient-to-r from-indigo-950/90 via-slate-900 to-indigo-950/90 border border-indigo-500/40 rounded-xl px-3 py-2 flex items-center justify-between gap-2 shadow-inner">
+        <span class="text-[11px] sm:text-xs font-bold text-indigo-300 uppercase tracking-wider" data-i18n="wbExpressionBanner">
+          Expresión actual:
+        </span>
+        <span id="wb-banner-expression" class="font-math font-extrabold text-base sm:text-xl text-white tracking-wide">
+          ...
+        </span>
+      </div>
+    </div>
+
+    <!-- Functional Whiteboard Toolbar -->
+    <div class="px-3 py-2 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+      
+      <!-- Primary Drawing Tools -->
+      <div class="flex items-center gap-1.5">
+        <!-- ✏️ Lápiz -->
+        <button type="button" id="wb-tool-pencil" class="tap-effect px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-semibold text-xs transition-all shadow-sm">
+          <span>✏️</span>
+          <span data-i18n="wbToolPencil">Lápiz</span>
+        </button>
+        <!-- 🧽 Goma -->
+        <button type="button" id="wb-tool-eraser" class="tap-effect px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-semibold text-xs transition-all shadow-sm">
+          <span>🧽</span>
+          <span data-i18n="wbToolEraser">Goma</span>
+        </button>
+        <!-- ⌨️ Texto -->
+        <button type="button" id="wb-tool-text" class="tap-effect px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-semibold text-xs transition-all shadow-sm">
+          <span>⌨️</span>
+          <span data-i18n="wbToolText">Texto</span>
+        </button>
+      </div>
+
+      <!-- Colors -->
+      <div class="flex items-center gap-1.5">
+        <button type="button" data-wb-color="#2563eb" class="w-6 h-6 rounded-full bg-blue-600 border border-white/40 shadow-sm transition-transform"></button>
+        <button type="button" data-wb-color="#dc2626" class="w-6 h-6 rounded-full bg-red-600 border border-white/40 shadow-sm transition-transform"></button>
+        <button type="button" data-wb-color="#0f172a" class="w-6 h-6 rounded-full bg-slate-900 border border-white/40 shadow-sm transition-transform"></button>
+        <button type="button" data-wb-color="#16a34a" class="w-6 h-6 rounded-full bg-green-600 border border-white/40 shadow-sm transition-transform"></button>
+      </div>
+
+      <!-- Stroke Size Slider & Preview -->
+      <div class="flex items-center gap-2">
+        <span class="text-slate-400 font-medium hidden sm:inline" data-i18n="wbStrokeSize">Grosor</span>
+        <input type="range" id="wb-stroke-slider" min="2" max="30" value="4" class="w-20 sm:w-24 accent-indigo-500 cursor-pointer">
+        <div class="w-7 h-7 flex items-center justify-center bg-slate-800 rounded-md border border-slate-700">
+          <span id="wb-size-indicator" class="rounded-full bg-blue-600"></span>
+        </div>
+      </div>
+
+      <!-- Undo / Redo / Clear -->
+      <div class="flex items-center gap-1.5">
+        <button type="button" id="wb-btn-undo" class="tap-effect p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700" title="Deshacer">
+          ↩️
+        </button>
+        <button type="button" id="wb-btn-redo" class="tap-effect p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700" title="Rehacer">
+          ↪️
+        </button>
+        <!-- 🧹 Limpiar Todo -->
+        <button type="button" id="wb-btn-clear" class="tap-effect px-2 py-1.5 rounded-lg bg-rose-950/70 hover:bg-rose-900 text-rose-300 font-semibold border border-rose-800/60" data-i18n="wbClearAll">
+          🧹 Limpiar Todo
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Canvas Container (Fills the center) -->
+    <div class="flex-1 w-full relative bg-white overflow-hidden select-none cursor-crosshair">
+      <canvas id="wb-canvas" class="block w-full h-full"></canvas>
+
+      <!-- Tip Overlay -->
+      <div class="absolute bottom-2 left-2 pointer-events-none bg-slate-900/70 backdrop-blur-sm text-slate-300 px-2.5 py-1 rounded-md text-[11px] border border-slate-700/60">
+        <span data-i18n="wbTip">💡 Dibuja o escribe para resolver tus pasos</span>
+      </div>
+    </div>
+
+    <!-- Whiteboard Footer: Direct Answer Input & Check Button (Requisito Clave) -->
+    <div class="px-3 py-2.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 flex-1 max-w-xs">
+        <span class="text-xs font-semibold text-slate-400" data-i18n="yourAnswer">Tu respuesta:</span>
+        <input type="number" id="wb-answer-input" inputmode="numeric"
+          class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-math font-bold text-white text-base focus:border-indigo-500 outline-none"
+          placeholder="?">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button type="button" id="wb-btn-check"
+          class="tap-effect px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
+          data-i18n="btnCheck">
+          <span>✅</span>
+          <span>Comprobar</span>
+        </button>
+        <button type="button" data-action="close-whiteboard"
+          class="tap-effect px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700"
+          data-i18n="wbClose">
+          Minimizar
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Dialog for Canvas Text Input (Herramienta de Texto) -->
+  <div id="wb-text-input-dialog" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 w-full max-w-sm flex flex-col gap-3 shadow-2xl">
+      <h3 class="text-sm font-bold text-white" data-i18n="wbTextPromptTitle">Escribir en la pizarra</h3>
+      
+      <input type="text" id="wb-text-field"
+        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-math text-white text-lg focus:border-indigo-500 outline-none"
+        data-i18n-placeholder="wbTextPlaceholder" placeholder="Números o símbolos...">
+
+      <!-- Quick Math Symbols Toolbar -->
+      <div class="flex flex-wrap items-center justify-center gap-1.5">
+        <button type="button" data-wb-symbol="+" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">+</button>
+        <button type="button" data-wb-symbol="-" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">-</button>
+        <button type="button" data-wb-symbol="×" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">×</button>
+        <button type="button" data-wb-symbol="÷" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">÷</button>
+        <button type="button" data-wb-symbol="=" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">=</button>
+        <button type="button" data-wb-symbol="(" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">(</button>
+        <button type="button" data-wb-symbol=")" class="tap-effect w-9 h-8 rounded-lg bg-slate-800 font-math font-bold text-slate-200 border border-slate-700">)</button>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-800">
+        <button type="button" id="wb-btn-cancel-text" class="tap-effect px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold" data-i18n="wbCancel">
+          Cancelar
+        </button>
+        <button type="button" id="wb-btn-insert-text" class="tap-effect px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold" data-i18n="wbInsertText">
+          Insertar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- MODAL: AJUSTES (Settings & i18n)                        -->
+  <!-- ======================================================= -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-md flex flex-col gap-5 shadow-2xl">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2" data-i18n="settingsTitle">
+          <span>⚙️</span>
+          <span>Ajustes</span>
+        </h2>
+        <button type="button" id="btn-close-settings" class="tap-effect p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800">
+          ✕
+        </button>
+      </div>
+
+      <!-- Sección Idioma / Language (Requisito Clave) -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="settingsLanguageSection">
+          Idioma / Language
+        </span>
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Español (Base) -->
+          <button type="button" id="lang-btn-es"
+            class="tap-effect py-2.5 px-3 rounded-xl text-center text-xs sm:text-sm font-bold border border-slate-700 transition-all flex items-center justify-center gap-2">
+            <span>🇪🇸</span>
+            <span data-i18n="langEs">Español (Base)</span>
+          </button>
+          <!-- English (US) -->
+          <button type="button" id="lang-btn-en"
+            class="tap-effect py-2.5 px-3 rounded-xl text-center text-xs sm:text-sm font-bold border border-slate-700 transition-all flex items-center justify-center gap-2">
+            <span>🇺🇸</span>
+            <span data-i18n="langEn">English (US)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sección Sonido -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="settingsSoundSection">
+          Efectos de Sonido
+        </span>
+        <button type="button" id="sound-toggle-btn"
+          class="tap-effect w-full py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-between border border-slate-700 transition-all">
+          <span id="sound-toggle-text" data-i18n="soundEnabled">Sonido activado</span>
+          <span id="sound-toggle-icon" class="text-base">🔊</span>
+        </button>
+      </div>
+
+      <!-- Sección Gestión de Datos / Reinicio -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider" data-i18n="settingsStatsSection">
+          Gestión de Datos
+        </span>
+        <button type="button" id="btn-open-reset-confirm"
+          class="tap-effect w-full py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold text-rose-300 bg-rose-950/50 hover:bg-rose-900/60 border border-rose-800/60 flex items-center justify-center gap-2 transition-all">
+          <span>🗑️</span>
+          <span data-i18n="btnResetStats">Reiniciar Estadísticas</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal Confirmación de Reinicio -->
+  <div id="reset-confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-sm flex flex-col gap-4 shadow-2xl text-center">
+      <div class="w-12 h-12 mx-auto rounded-full bg-rose-950 flex items-center justify-center text-2xl border border-rose-700">
+        ⚠️
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white" data-i18n="resetConfirmTitle">¿Reiniciar estadísticas?</h3>
+        <p class="text-xs text-slate-400 mt-1" data-i18n="resetConfirmText">Esta acción pondrá en 0 tus aciertos, rachas y errores.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" id="btn-cancel-reset-stats" class="tap-effect py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700" data-i18n="btnCancel">
+          Cancelar
+        </button>
+        <button type="button" id="btn-confirm-reset-stats" class="tap-effect py-2 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md shadow-rose-600/30" data-i18n="btnConfirmReset">
+          Sí, reiniciar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- MODAL: GUÍA PAPOMUDAS / PEMDAS                          -->
+  <!-- ======================================================= -->
+  <div id="guide-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-lg max-h-[90vh] flex flex-col gap-4 shadow-2xl overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2" data-i18n="guideTitle">
+          <span>📚</span>
+          <span>Guía: Jerarquía de Operaciones</span>
+        </h2>
+        <button type="button" id="btn-close-guide" class="tap-effect p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800">
+          ✕
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300 font-medium" data-i18n="guideIntro">
+        Para resolver cualquier cálculo sin equivocarte, sigue el orden oficial:
+      </p>
+
+      <div class="flex flex-col gap-2.5">
+        <div class="p-3 rounded-xl bg-indigo-950/60 border border-indigo-700/50">
+          <h4 class="text-xs font-bold text-indigo-300 uppercase tracking-wide" data-i18n="ruleP_title">1. PA - Paréntesis ( )</h4>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed" data-i18n="ruleP_desc">Se resuelven primero las operaciones dentro de los paréntesis.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-violet-950/60 border border-violet-700/50">
+          <h4 class="text-xs font-bold text-violet-300 uppercase tracking-wide" data-i18n="ruleO_title">2. PO - Potencias y Raíces</h4>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed" data-i18n="ruleO_desc">Luego se calculan potencias y raíces de izquierda a derecha.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-amber-950/60 border border-amber-700/50">
+          <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wide" data-i18n="ruleMU_title">3. MU / D - Multiplicación y División × ÷</h4>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed" data-i18n="ruleMU_desc">Tienen la MISMA prioridad. Se resuelven de izquierda a derecha a medida que aparecen.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-700/50">
+          <h4 class="text-xs font-bold text-emerald-300 uppercase tracking-wide" data-i18n="ruleAS_title">4. AS - Adición y Sustracción + −</h4>
+          <p class="text-xs text-slate-300 mt-0.5 leading-relaxed" data-i18n="ruleAS_desc">Al final, se suman y restan los términos de izquierda a derecha.</p>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-xs text-amber-300 leading-relaxed font-medium" data-i18n="guideTip">
+        💡 Regla de oro: Si dos operaciones tienen la misma jerarquía (ej. × y ÷, o + y −), resuélvelas estrictamente de izquierda a derecha.
+      </div>
+
+      <div class="pt-2">
+        <button type="button" data-action="open-guide" onclick="document.getElementById('guide-modal').classList.add('hidden'); document.body.classList.remove('overflow-hidden');"
+          class="tap-effect w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md"
+          data-i18n="guideClose">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- MODAL: PASO A PASO (Step-by-Step Resolution)            -->
+  <!-- ======================================================= -->
+  <div id="steps-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-md max-h-[90vh] flex flex-col gap-4 shadow-2xl overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2" data-i18n="stepsTitle">
+          <span>💡</span>
+          <span>Resolución Paso a Paso</span>
+        </h2>
+        <button type="button" id="btn-close-steps" class="tap-effect p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800">
+          ✕
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 font-medium" data-i18n="stepsSubtitle">
+        Cómo resolver aplicando PAPOMUDAS:
+      </p>
+
+      <!-- Dynamic list of steps -->
+      <div id="steps-content-list" class="flex flex-col gap-2"></div>
+
+      <div class="pt-2">
+        <button type="button" onclick="document.getElementById('steps-modal').classList.add('hidden'); document.body.classList.remove('overflow-hidden');"
+          class="tap-effect w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md"
+          data-i18n="stepsClose">
+          Continuar Practicando
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="./js/i18n.js"></script>
+  <script src="./js/audio.js"></script>
+  <script src="./js/confetti.js"></script>
+  <script src="./js/math-engine.js"></script>
+  <script src="./js/whiteboard.js"></script>
+  <script src="./js/app.js"></script>
+
+</body>
+</html>
