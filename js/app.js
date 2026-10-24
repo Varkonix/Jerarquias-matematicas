@@ -121,6 +121,9 @@ class MathApp {
 
     // Registrar Service Worker para PWA / Offline
     this.registerServiceWorker();
+
+    // Bloqueo estricto de rebote elástico (rubber-band) para iOS PWA standalone
+    this.setupIOSViewportLock();
   }
 
   setupEventListeners() {
@@ -638,6 +641,49 @@ class MathApp {
           });
       });
     }
+  }
+
+  setupIOSViewportLock() {
+    let touchStartY = 0;
+
+    // Registrar posición inicial del toque
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    // Interceptar touchmove para anular el rebote (rubber-band) en iOS standalone
+    document.addEventListener('touchmove', (e) => {
+      // 1. Si la pizarra táctil está abierta, el Canvas y el modal manejan su propio bloqueo estricto
+      if (window.whiteboard?.isOpen()) {
+        return;
+      }
+
+      // 2. Permitir interacción fluida en controles como range sliders
+      if (e.target && (e.target.tagName === 'INPUT' && e.target.type === 'range')) {
+        return;
+      }
+
+      // 3. Buscar si el touch se originó dentro de un contenedor con scroll permitido
+      const scrollable = e.target.closest('main.app-main, #steps-modal > div, #guide-modal > div, #settings-modal > div');
+      if (!scrollable) {
+        // En cualquier otra zona (cabecera, pie, fondo, botones), anular el arrastre
+        e.preventDefault();
+        return;
+      }
+
+      // 4. Bloquear el rebote en los límites superior e inferior del contenedor con scroll
+      const atTop = scrollable.scrollTop <= 0;
+      const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+      const currentY = e.touches[0].clientY;
+      const isPullingDown = currentY > touchStartY;
+      const isPullingUp = currentY < touchStartY;
+
+      if ((atTop && isPullingDown) || (atBottom && isPullingUp)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 }
 

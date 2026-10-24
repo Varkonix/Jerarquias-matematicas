@@ -2,7 +2,7 @@
  * Service Worker para funcionamiento 100% Offline (PWA)
  */
 
-const CACHE_NAME = 'math-pemdas-v1.0.0';
+const CACHE_NAME = 'math-pemdas-v1.0.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

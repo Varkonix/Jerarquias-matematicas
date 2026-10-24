@@ -63,6 +63,34 @@ class WhiteboardModal {
     this.canvas.addEventListener('pointerup', (e) => this.handlePointerUp(e));
     this.canvas.addEventListener('pointercancel', (e) => this.handlePointerUp(e));
 
+    // Intercepción estricta de touchmove en el Canvas con { passive: false } y e.preventDefault()
+    // para que el trazo del dedo no mueva la ventana bajo ninguna circunstancia en iOS PWA standalone
+    this.canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+    // Bloqueo de gestos multitáctiles o zoom sobre el canvas
+    this.canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Bloqueo de gestos de zoom de iOS Safari en el canvas
+    this.canvas.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+    this.canvas.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+    this.canvas.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+    // Bloqueo de gestos de rebote elástico en el contenedor del modal de pizarra
+    if (this.modal) {
+      this.modal.addEventListener('touchmove', (e) => {
+        // Permitir interacción exclusivamente en inputs editables (slider de grosor y respuesta)
+        if (e.target !== this.sizeSlider && e.target !== this.inputAnswer && e.target !== this.textInput) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
+
     // Botones de herramientas
     document.getElementById('wb-tool-pencil')?.addEventListener('click', () => this.setTool('pencil'));
     document.getElementById('wb-tool-eraser')?.addEventListener('click', () => this.setTool('eraser'));
@@ -175,9 +203,9 @@ class WhiteboardModal {
       this.inputAnswer.value = mainInput.value;
     }
 
-    // Reajustar canvas después de mostrar el modal
+    // Reajustar canvas después de mostrar el modal preservando el dibujo existente
     setTimeout(() => {
-      this.resizeCanvas(false);
+      this.resizeCanvas(this.historyStep >= 0);
       if (this.historyStep === -1) {
         this.saveState();
       }
@@ -224,11 +252,10 @@ class WhiteboardModal {
       this.canvas.height = newHeight;
       this.ctx.scale(dpr, dpr);
 
-      // Si teníamos dibujo previo, restaurarlo con fondo blanco limpio
+      // Restaurar con fondo blanco limpio si teníamos dibujo previo
+      this.fillBackground();
       if (savedData && preserveDrawing) {
         this.ctx.putImageData(savedData, 0, 0);
-      } else {
-        this.fillBackground();
       }
     }
   }
@@ -317,8 +344,14 @@ class WhiteboardModal {
       return;
     }
 
+    try {
+      e.preventDefault();
+    } catch (err) {}
+
     this.isDrawing = true;
-    this.canvas.setPointerCapture(e.pointerId);
+    try {
+      this.canvas.setPointerCapture(e.pointerId);
+    } catch (err) {}
 
     const pos = this.getPointerPos(e);
     this.lastX = pos.x;
@@ -333,6 +366,10 @@ class WhiteboardModal {
 
   handlePointerMove(e) {
     if (!this.isDrawing) return;
+
+    try {
+      e.preventDefault();
+    } catch (err) {}
 
     const pos = this.getPointerPos(e);
     const x = pos.x;
