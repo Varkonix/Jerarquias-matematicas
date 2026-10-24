@@ -2,7 +2,7 @@
  * Service Worker para funcionamiento 100% Offline (PWA)
  */
 
-const CACHE_NAME = 'math-pemdas-v1.0.2';
+const CACHE_NAME = 'math-pemdas-v1.0.3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -45,13 +45,28 @@ self.addEventListener('fetch', (event) => {
   // Ignorar esquemas no soportados (como chrome-extension:)
   if (!event.request.url.startsWith('http')) return;
 
+  // 1. Navegación / HTML: Network-first con respaldo en caché (asegura recibir actualizaciones online)
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // 2. Recursos estáticos: Stale-While-Revalidate (entrega rápida desde caché y actualiza en segundo plano)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        // Almacenar en caché si es una petición válida
+      const networkFetch = fetch(event.request).then((networkResponse) => {
         if (
           networkResponse &&
           networkResponse.status === 200 &&
@@ -63,12 +78,9 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // Si no hay red y se pide un documento HTML, devolver index.html de la caché
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('./index.html');
-        }
-      });
+      }).catch(() => {});
+
+      return cachedResponse || networkFetch;
     })
   );
 });

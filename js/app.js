@@ -631,6 +631,9 @@ class MathApp {
         navigator.serviceWorker.register('./sw.js')
           .then(reg => {
             console.log('ServiceWorker registrado con éxito:', reg.scope);
+            // Comprobar de inmediato si hay una versión más reciente en GitHub
+            reg.update();
+
             const offlineBadge = document.getElementById('offline-badge');
             if (offlineBadge) {
               offlineBadge.classList.remove('hidden');
